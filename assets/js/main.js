@@ -383,3 +383,26 @@ botaoFavorito.addEventListener("click", () => {
     listaPokemon.append(div);
     aplicarFiltro(div);
 }
+
+const mobileLayout = window.matchMedia("(max-width: 600px)");
+const searchTools = document.querySelector(".search-tools");
+const filters = document.querySelector(".filters");
+const sortBox = document.querySelector(".sort-box");
+const moreTypes = document.querySelector(".more-types");
+
+const filterActions = document.createElement("div");
+filterActions.className = "filter-actions";
+
+function ajustarOrdenacaoMobile() {
+    if (mobileLayout.matches) {
+        filters.append(filterActions);
+        filterActions.append(sortBox, moreTypes);
+    } else {
+        searchTools.append(sortBox);
+        filters.append(moreTypes);
+        filterActions.remove();
+    }
+}
+
+mobileLayout.addEventListener("change", ajustarOrdenacaoMobile);
+ajustarOrdenacaoMobile();
