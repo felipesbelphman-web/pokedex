@@ -1,150 +1,133 @@
+"use strict";
 const listaPokemon = document.querySelector("#list-pokemon");
-const apiUrl = "https://pokeapi.co/api/v2/pokemon/";
 const botoesTipos = document.querySelectorAll(".btn-header");
-
+const search = document.querySelector("#pokemon-search");
+const sort = document.querySelector("#pokemon-sort");
+const empty = document.querySelector("#favorites-empty");
+const status = document.querySelector("#load-status");
+const retry = document.querySelector("#retry-load");
 let filtroAtual = "all";
-
-// Recupera os favoritos salvos neste navegador
+let carregando = false;
+const carregados = new Set();
 let favoritos;
-
 try {
-    const salvos = JSON.parse(
-        localStorage.getItem("pokedex-favorites") || "[]"
-    );
+ const salvos = JSON.parse(localStorage.getItem("pokedex-favorites") || "[]");
+ favoritos = new Set(Array.isArray(salvos) ? salvos.map(Number).filter(id => Number.isInteger(id) && id >= 1 && id <= 151) : []);
+} catch { favoritos = new Set(); }
 
-    favoritos = new Set(
-        Array.isArray(salvos) ? salvos.map(Number) : []
-    );
-} catch {
-    favoritos = new Set();
-}
-
-const mensagemFavoritos = document.querySelector("#favorites-empty");
-const linkFavoritos = document.querySelector(".favorites-link");
-
-function atualizarTelaFavoritos() {
-    const mostrandoFavoritos = location.hash === "#favorites";
-
-    linkFavoritos.classList.toggle("is-active", mostrandoFavoritos);
-
-    if (mostrandoFavoritos) {
-        linkFavoritos.setAttribute("aria-current", "page");
-    } else {
-        linkFavoritos.removeAttribute("aria-current");
-    }
-
-    mensagemFavoritos.hidden =
-        !mostrandoFavoritos || favoritos.size > 0;
-
-    listaPokemon
-        .querySelectorAll(".pokemon")
-        .forEach(aplicarFiltro);
-}
-
-window.addEventListener("hashchange", () => {
-    // Abre a tela sem limitar a um tipo anterior
-    filtroAtual = "all";
-
-    botoesTipos.forEach(botao => {
-        botao.setAttribute(
-            "aria-pressed",
-            String(botao.id === "btn-all")
-        );
-    });
-
-    atualizarTelaFavoritos();
-});
-
-atualizarTelaFavoritos();
-
-/// Nome dos arquivos SVG dos tipos
 function arquivoDoTipo(tipo) {
-    return tipo === "fighting"
-        ? "Fight"
-        : tipo.charAt(0).toUpperCase() + tipo.slice(1);
+ return tipo === "fighting" ? "Fight" : tipo.charAt(0).toUpperCase() + tipo.slice(1);
 }
-
 function aplicarFiltro(card) {
-    const tipos = card.dataset.types.split(" ");
-    const id = Number(card.dataset.id);
-
-    const correspondeAoTipo =
-        filtroAtual === "all" || tipos.includes(filtroAtual);
-
-    const correspondeAosFavoritos =
-        location.hash !== "#favorites" || favoritos.has(id);
-
-    card.hidden =
-        !correspondeAoTipo || !correspondeAosFavoritos;
+ const query = search.value.trim().toLowerCase().replace(/^#/, "");
+ const numero = Number(query);
+ const matchSearch = !query || card.dataset.name.includes(query) ||
+  (/^\d+$/.test(query) && Number(card.dataset.id) === numero);
+ card.hidden = !matchSearch ||
+  (filtroAtual !== "all" && !card.dataset.types.split(" ").includes(filtroAtual)) ||
+  (location.hash === "#favorites" && !favoritos.has(Number(card.dataset.id)));
 }
-
-// Menu de tipos
-botoesTipos.forEach(botao => {
-    const tipo = botao.id === "btn-all" ? "all" : botao.id;
-
-    botao.style.removeProperty("background-color");
-
-    if (tipo === "all") {
-        botao.textContent = "All Pokémon";
-    } else {
-        const arquivo = arquivoDoTipo(tipo);
-
-        botao.style.setProperty(
-            "--filter-color",
-            `var(--type-${tipo})`
-        );
-
-        botao.innerHTML = `
-            <img
-                src="./image/Types/${arquivo}.svg"
-                alt=""
-                aria-hidden="true"
-            >
-            <span>${tipo}</span>
-        `;
-    }
-
-    botao.setAttribute(
-        "aria-pressed",
-        String(tipo === filtroAtual)
-    );
-
-    botao.addEventListener("click", () => {
-    filtroAtual = tipo;
-
-    // All Pokémon sai da tela de favoritos
-    if (tipo === "all" && location.hash === "#favorites") {
-        location.hash = "all";
-    }
-
-        botoesTipos.forEach(item => {
-            item.setAttribute(
-                "aria-pressed",
-                String(item === botao)
-            );
-        });
-
-        listaPokemon
-            .querySelectorAll(".pokemon")
-            .forEach(aplicarFiltro);
-    });
+function ordenarCards() {
+ const cards = [...listaPokemon.children];
+ cards.sort((a,b) => {
+  const direction = sort.value.endsWith("desc") ? -1 : 1;
+  return direction * (sort.value.startsWith("name") ?
+   a.dataset.name.localeCompare(b.dataset.name) : Number(a.dataset.id) - Number(b.dataset.id));
+ });
+ cards.forEach(card => listaPokemon.append(card));
+}
+function atualizarTelaFavoritos() {
+ const isFavorites = location.hash === "#favorites";
+ document.querySelector("#favorites-count").textContent = favoritos.size;
+ for (const [selector, active] of [[".favorites-link",isFavorites],[".explore-link",!isFavorites]]) {
+  const link = document.querySelector(selector);
+  if(active) link.setAttribute("aria-current","page");
+  else link.removeAttribute("aria-current");
+ }
+ document.querySelector("#page-title").textContent = isFavorites ? "Your favorite Pokémon" : "Discover your next Pokémon";
+ let visible = 0;
+ listaPokemon.querySelectorAll(".pokemon").forEach(card => {
+  aplicarFiltro(card);
+  if(!card.hidden) visible++;
+ });
+ document.querySelector("#results-count").textContent = visible + (visible === 1 ? " Pokémon" : " Pokémon") + (isFavorites ? " saved" : "");
+ empty.hidden = visible !== 0 || carregando;
+ document.querySelector("#empty-description").textContent = isFavorites && favoritos.size === 0 ?
+  "Click a Pokémon’s Poké Ball to save it here." : "Try another name, number or type.";
+ botoesTipos.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.type === filtroAtual)));
+ const extra = [...document.querySelectorAll(".more-panel .btn-header")].find(button => button.dataset.type === filtroAtual);
+ document.querySelector("#more-label").innerHTML = `
+  <img
+    src="./image/filter.svg"
+    alt=""
+    aria-hidden="true"
+    class="ui-icon"
+  >
+  <span>${extra ? extra.dataset.type : "More"}</span>
+`;
+}
+botoesTipos.forEach(button => {
+ const tipo = button.dataset.type;
+ button.innerHTML = tipo === "all" ? "All Pokémon" :
+  '<img src="./image/Types/' + arquivoDoTipo(tipo) + '.svg" alt=""><span>' + tipo + '</span>';
+ button.addEventListener("click", () => {
+  filtroAtual = tipo;
+  document.querySelector(".more-types").open = false;
+  atualizarTelaFavoritos();
+ });
 });
-
-// Carrega os Pokémon
-for (let i = 1; i <= 151; i++) {
-    fetch(apiUrl + i)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Erro ao carregar Pokémon #${i}`);
-            }
-
-            return response.json();
-        })
-        .then(mostrarPokemon)
-        .catch(error => console.error(error));
+search.addEventListener("input",atualizarTelaFavoritos);
+sort.addEventListener("change",ordenarCards);
+window.addEventListener("hashchange", () => {
+ filtroAtual = "all"; search.value = ""; atualizarTelaFavoritos();
+});
+document.querySelector("#reset-filters").addEventListener("click", () => {
+ filtroAtual = "all"; search.value = ""; atualizarTelaFavoritos(); search.focus();
+});
+for(const layout of ["grid","list"]) {
+ document.querySelector("#" + layout + "-view").addEventListener("click", () => {
+  listaPokemon.classList.toggle("is-list", layout === "list");
+  for(const mode of ["grid","list"]) document.querySelector("#" + mode + "-view").setAttribute("aria-pressed",String(layout === mode));
+ });
 }
+document.addEventListener("click", event => {
+ const details = document.querySelector(".more-types");
+ if(!details.contains(event.target)) details.open = false;
+});
+document.addEventListener("keydown", event => {
+ if(event.key === "Escape") document.querySelector(".more-types").open = false;
+});
+async function carregarPokemon() {
+ if(carregando) return;
+ carregando = true; retry.hidden = true; empty.hidden = true;
+ listaPokemon.setAttribute("aria-busy","true");
+ const pending = Array.from({length:151},(_,i)=>i+1).filter(id => !carregados.has(id));
+ let next = 0;
+ async function worker() {
+  while(next < pending.length) {
+   const id = pending[next++];
+   try {
+    const response = await fetch("https://pokeapi.co/api/v2/pokemon/" + id, {signal: AbortSignal.timeout(20000)});
+    if(!response.ok) throw new Error("HTTP " + response.status);
+    const poke = await response.json();
+    mostrarPokemon(poke); carregados.add(id);
+    ordenarCards(); atualizarTelaFavoritos();
+   } catch(error) { console.error("Could not load Pokémon #" + id,error); }
+   status.textContent = "Loaded " + carregados.size + " of 151 Pokémon…";
+  }
+ }
+ await Promise.all(Array.from({length:8},worker));
+ carregando = false;
+ listaPokemon.setAttribute("aria-busy","false");
+ status.hidden = carregados.size === 151;
+ status.textContent = "Loaded " + carregados.size + " of 151 Pokémon. Some could not be loaded.";
+ retry.hidden = carregados.size === 151;
+ atualizarTelaFavoritos();
+}
+retry.addEventListener("click", () => {status.hidden = false; carregarPokemon();});
+atualizarTelaFavoritos();
+carregarPokemon();
 
-// Cria cada card
 function mostrarPokemon(poke) {
     const numero = String(poke.id).padStart(3, "0");
     const tipoPrincipal = poke.types[0].type.name;
@@ -208,6 +191,7 @@ function mostrarPokemon(poke) {
     div.classList.add("pokemon", "pokemon-flip");
 
     div.dataset.id = String(poke.id);
+    div.dataset.name = poke.name;
     div.dataset.types = poke.types
         .map(item => item.type.name)
         .join(" ");
@@ -229,8 +213,8 @@ function mostrarPokemon(poke) {
                     <button
                         class="favorite-button"
                         type="button"
-                        aria-label="Add ${poke.name} to favorites"
-                        aria-pressed="false"
+                        aria-label="${favoritos.has(poke.id) ? "Remove " + poke.name + " from favorites" : "Add " + poke.name + " to favorites"}"
+                        aria-pressed="${favoritos.has(poke.id)}"
                     >
                         <img
                             src="./image/pokeball.svg"
@@ -242,7 +226,7 @@ function mostrarPokemon(poke) {
 
                     <div class="pokemon-imagem">
                         <img
-                            src="${imagem}"
+                            src="${imagem}" loading="lazy" decoding="async" width="220" height="220"
                             alt="${poke.name}"
                         >
                     </div>
@@ -257,11 +241,23 @@ function mostrarPokemon(poke) {
 
                     <div class="pokemon-stats">
                         <div class="stat">
+                            <img
+                                src="./image/expand-lines.svg"
+                                alt=""
+                                aria-hidden="true"
+                                class="stat-icon"
+                            >
                             <span class="stat-label">Height</span>
                             <strong>${poke.height / 10} m</strong>
                         </div>
 
                         <div class="stat">
+                            <img
+                                src="./image/gym.svg"
+                                alt=""
+                                aria-hidden="true"
+                                class="stat-icon"
+                            >
                             <span class="stat-label">Weight</span>
                             <strong>${poke.weight / 10} kg</strong>
                         </div>
@@ -384,9 +380,6 @@ botaoFavorito.addEventListener("click", () => {
     atualizarTelaFavoritos();
 });
 
-    // Insere em ordem numérica, mesmo com respostas fora de ordem
-    const proximoCard = Array.from(listaPokemon.children)
-        .find(card => Number(card.dataset.id) > poke.id);
-
-    listaPokemon.insertBefore(div, proximoCard || null);
+    listaPokemon.append(div);
+    aplicarFiltro(div);
 }

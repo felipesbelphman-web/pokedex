@@ -1,101 +1,42 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pokédex</title>
-    <link rel="stylesheet" href="./css/main.css" />
-  </head>
-  <body>
-    <header>
-      <nav class="nav">
-        <div class="nav-brand">
-          <a
-              href="#favorites"
-              class="favorites-link"
-              aria-label="View favorite Pokémon"
-              title="Favorites"
-          >
-              <img src="./image/pokeball.svg" alt="">
-          </a>
-
-          <a href="#all" aria-label="View all Pokémon">
-              <img
-                  src="./image/logo.png"
-                  alt="Pokédex"
-                  class="nav-logo"
-              >
-          </a>
-      </div>
-
-      <p id="favorites-empty" hidden>
-          No favorites yet. Click a Pokémon’s Poké Ball to save it!
-      </p>
-        <ul class="nav-list">
-          <li class="nav-item">
-            <button class="btn btn-header all" id="btn-all">All</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header fire" id="fire">Fire</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header water" id="water">Water</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header grass" id="grass">Grass</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header electric" id="electric">
-              Electric
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header psychic" id="psychic">Psychic</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header normal" id="normal">Normal</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header poison" id="poison">Poison</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header ground" id="ground">Ground</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header flying" id="flying">Flying</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header bug" id="bug">Bug</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header rock" id="rock">Rock</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header ghost" id="ghost">Ghost</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header dragon" id="dragon">Dragon</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header dark" id="dark">Dark</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header steel" id="steel">Steel</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header fairy" id="fairy">Fairy</button>
-          </li>
-          <li class="nav-item">
-            <button class="btn btn-header ice" id="ice">Ice</button>
-          </li>
-        </ul>
-      </nav>
-    </header>
-    <main>
-      <div id="All">
-        <div class="pokemon-all" id="list-pokemon"></div>
-      </div>
-    </main>
-    <script src="./js/main.js"></script>
-  </body>
-</html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pokédex — Explore Pokémon</title>
+<link rel="stylesheet" href="./css/main.css">
+<script src="./js/main.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#list-pokemon">Skip to Pokémon</a>
+<header class="site-header">
+<nav class="top-nav" aria-label="Main navigation">
+<a href="#all" class="brand"><img src="./image/logo.png" alt="Pokédex"></a>
+<div class="page-links">
+<a href="#all" class="explore-link">Explore</a>
+<a href="#favorites" class="favorites-link"><img src="./image/pokeball.svg" alt=""><span>Favorites</span><span id="favorites-count">0</span></a>
+</div>
+</nav>
+</header>
+<main>
+<section class="hero" aria-labelledby="page-title">
+<h1 id="page-title">Discover your next Pokémon</h1>
+<p>Explore the original 151 Pokémon.</p>
+<div class="search-tools">
+<label class="search-box"><img src="./image/search.svg" alt="" aria-hidden="true" class="ui-icon"><span class="sr-only">Search by name or number</span><input id="pokemon-search" type="search" placeholder="Search by name or number" autocomplete="off"></label>
+<label class="sort-box"><span class="sr-only">Sort Pokémon</span><select id="pokemon-sort"><option value="number">Number ↑</option><option value="number-desc">Number ↓</option><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option></select></label>
+</div>
+<div class="filters" aria-label="Filter by type">
+<div class="primary-filters"><button type="button" class="btn-header" data-type="all" aria-pressed="true">all</button><button type="button" class="btn-header" data-type="grass" aria-pressed="false">grass</button><button type="button" class="btn-header" data-type="fire" aria-pressed="false">fire</button><button type="button" class="btn-header" data-type="water" aria-pressed="false">water</button><button type="button" class="btn-header" data-type="electric" aria-pressed="false">electric</button><button type="button" class="btn-header" data-type="poison" aria-pressed="false">poison</button></div>
+<details class="more-types"><summary id="more-label">More <span aria-hidden="true">⌄</span></summary><div class="more-panel"><button type="button" class="btn-header" data-type="normal" aria-pressed="false">normal</button><button type="button" class="btn-header" data-type="fighting" aria-pressed="false">fighting</button><button type="button" class="btn-header" data-type="flying" aria-pressed="false">flying</button><button type="button" class="btn-header" data-type="ground" aria-pressed="false">ground</button><button type="button" class="btn-header" data-type="rock" aria-pressed="false">rock</button><button type="button" class="btn-header" data-type="bug" aria-pressed="false">bug</button><button type="button" class="btn-header" data-type="ghost" aria-pressed="false">ghost</button><button type="button" class="btn-header" data-type="steel" aria-pressed="false">steel</button><button type="button" class="btn-header" data-type="psychic" aria-pressed="false">psychic</button><button type="button" class="btn-header" data-type="ice" aria-pressed="false">ice</button><button type="button" class="btn-header" data-type="dragon" aria-pressed="false">dragon</button><button type="button" class="btn-header" data-type="dark" aria-pressed="false">dark</button><button type="button" class="btn-header" data-type="fairy" aria-pressed="false">fairy</button></div></details>
+</div>
+</section>
+<section aria-label="Pokémon results">
+<div class="results-toolbar"><h2 id="results-count" aria-live="polite">Loading Pokémon…</h2><div class="view-switch" aria-label="View layout"><button id="grid-view" aria-label="Grid view" aria-pressed="true">▦</button><button id="list-view" aria-label="List view" aria-pressed="false">☰</button></div></div>
+<p id="load-status" class="load-status" role="status">Getting your Pokémon ready…</p>
+<button id="retry-load" class="retry-button" hidden>Retry missing Pokémon</button>
+<div class="empty-state" id="favorites-empty" hidden><h3>No Pokémon found</h3><p id="empty-description"></p><button id="reset-filters">Clear filters</button></div>
+<div class="pokemon-all" id="list-pokemon" tabindex="-1" aria-busy="true"></div>
+</section>
+</main>
+<footer>Made for Pokémon trainers. Data &amp; artwork from <a href="https://pokeapi.co/">PokéAPI</a>.</footer>
+</body></html>
